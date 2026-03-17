@@ -33,6 +33,75 @@ It also runs automated daily and weekly reports on a cron schedule, and includes
 
 ---
 
+## How is MetricLens Different?
+
+There are existing tools that connect PostHog to Slack. Here's why MetricLens takes a different approach:
+
+| Solution | What it does | Limitation |
+|---|---|---|
+| **PostHog Slack Integration** (built-in) | Sends webhook alerts when events fire | One-way notifications only. Can't ask questions or get reports on demand. No AI analysis. |
+| **PostHog MCP Server** | Lets AI agents query PostHog via Model Context Protocol | Requires an MCP-compatible client (Claude Desktop, Cursor, etc.). Not accessible to non-technical team members in Slack. |
+| **Zapier / n8n** | Connects PostHog to Slack via automation workflows | Rigid triggers — you define specific flows in advance. No natural language, no ad-hoc questions, no AI explanations. Paid beyond free tier. |
+| **Better Stack / Datadog** | Full observability platforms with Slack alerts | Expensive. Focused on infrastructure monitoring, not product analytics. Requires migration away from PostHog. |
+| **Custom dashboards** | Grafana, Metabase, etc. connected to PostHog | Team has to leave Slack, log in, navigate dashboards. Nobody checks dashboards daily. |
+
+### What MetricLens does differently
+
+- **Lives where your team already is** — Slack. No context switching, no dashboard fatigue.
+- **Natural language, not SQL** — Anyone on the team can ask "who stopped using the app?" without knowing HogQL.
+- **AI explains the data** — Instead of raw numbers, you get: *"Only 3.7% of new users came back — that means about 4 out of every 100 visitors returned."*
+- **Session replay links** — Churned user reports include clickable links to watch their last session in PostHog. See exactly what happened before they left.
+- **Two-step reliability** — Data fetching is pure API calls (never fails). AI only handles formatting. If Codex goes down, fallback formatting still works.
+- **Zero infrastructure cost** — Runs on a single EC2 instance (t2.micro free tier eligible). Socket Mode means no domain, no SSL, no load balancer, no Elastic IP.
+- **Fully self-hosted** — Your data never touches third-party analytics platforms. PostHog API → your EC2 → your Slack. That's it.
+
+---
+
+## Infrastructure
+
+MetricLens is designed to run on minimal infrastructure with zero additional cost.
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    AWS EC2 (Ubuntu)                  │
+│                  t2.micro / t3.micro                 │
+│                                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────┐ │
+│  │  MetricLens  │  │  Codex CLI   │  │    PM2    │ │
+│  │  (Node.js)   │  │  (OpenAI)    │  │ (Process  │ │
+│  │              │◄─┤              │  │  Manager) │ │
+│  └──────┬───────┘  └──────────────┘  └───────────┘ │
+│         │                                           │
+│         │ Outbound only (no inbound ports needed)   │
+└─────────┼───────────────────────────────────────────┘
+          │
+          ▼
+    ┌─────────────┐          ┌──────────────┐
+    │ Slack API   │          │ PostHog API  │
+    │ (WebSocket) │          │ (HTTPS)      │
+    └─────────────┘          └──────────────┘
+```
+
+### Why this setup works
+
+| Concern | How MetricLens handles it |
+|---|---|
+| **No Elastic IP** | Socket Mode connects *outbound* to Slack — IP changes don't matter |
+| **No domain or SSL** | WebSocket connection, not HTTP webhooks — no public URL needed |
+| **No load balancer** | Single process handles everything (Slack events + cron + API calls) |
+| **No database** | Stateless — all data comes from PostHog's API on demand |
+| **Auto-recovery** | PM2 restarts the bot on crash, survives EC2 reboots |
+| **Cost** | Runs on t2.micro (AWS free tier) — **$0/month** for the first year |
+
+### Security
+
+- No inbound ports open (security group only needs outbound HTTPS on 443)
+- Secrets stored in `.env` on EC2, never committed to git
+- PostHog API key scoped to read-only with specific project access
+- Codex runs in a sandboxed subprocess
+
+---
+
 ## Features
 
 | Feature | Description |
