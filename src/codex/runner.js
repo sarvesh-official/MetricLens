@@ -44,8 +44,12 @@ function runCodex(prompt) {
     const cmd = `cat "${promptFile}" | codex exec -s danger-full-access --skip-git-repo-check -C "${PROJECT_ROOT}" -o "${outputFile}" -`;
 
     // Pass current process env vars to the child process
-    // This ensures POSTHOG_API_KEY and other vars are available
+    // If OPENAI_API_KEY is set in .env, Codex will use it automatically
+    // (more reliable than browser auth which expires on servers)
     const env = { ...process.env };
+    if (process.env.OPENAI_API_KEY) {
+      env.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    }
 
     exec(cmd, { timeout: CODEX_TIMEOUT, shell: true, env }, (error, stdout, stderr) => {
       // Read and clean up temp files

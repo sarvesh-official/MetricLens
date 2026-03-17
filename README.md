@@ -338,6 +338,7 @@ Install the app and copy:
 | `POSTHOG_PROJECT_ID` | Project ID (from URL) | `84639` |
 | `POSTHOG_HOST` | PostHog instance | `https://us.posthog.com` |
 | `SLACK_REPORT_CHANNEL` | Channel for auto-reports | `posthog-alerts` |
+| `OPENAI_API_KEY` | *(Optional)* OpenAI API key for Codex CLI | `sk-...` |
 
 ---
 

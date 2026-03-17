@@ -96,7 +96,12 @@ Write a clear, human-friendly summary of this data for a Slack message. Follow t
 
     const cmd = `cat "${promptFile}" | codex exec -s danger-full-access --skip-git-repo-check -o "${outputFile}" -`;
 
-    exec(cmd, { timeout: CODEX_TIMEOUT, shell: true, env: process.env }, (error, stdout) => {
+    const env = { ...process.env };
+    if (process.env.OPENAI_API_KEY) {
+      env.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    }
+
+    exec(cmd, { timeout: CODEX_TIMEOUT, shell: true, env }, (error, stdout) => {
       let output = "";
       try {
         if (fs.existsSync(outputFile)) {
